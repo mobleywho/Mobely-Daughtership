@@ -2,11 +2,6 @@
 
 #include <Encoder.h>
 
-// Change these two numbers to the pins connected to your encoder.
-//   Best Performance: both pins have interrupt capability
-//   Good Performance: only the first pin has interrupt capability
-//   Low Performance:  neither pin has interrupt capability
-
 Encoder myenc0(28, 24);
 Encoder myenc5(10, 26);
 Encoder myenc7(6, 5);
@@ -23,7 +18,7 @@ byte switch_pins[2] = {31, 32};
 byte led_pins[8] = {18, 16, 20, 21, 17, 19, 23, 22};
 byte button_cc[2][8] = {{12, 14, 16, 17, 18, 20, 22, 24}, {12, 15, 16, 17, 19, 21, 23, 25}};
 byte enc_cc [2][8] = {{26, 28, 30, 32, 34, 36, 38, 40}, {27, 29, 31, 33, 35, 37, 39, 41}};
-byte button_cc_latch[8] = {255, 0, 255, 255, 255, 255, 0, 0};
+byte button_cc_latch[8] = {255, 0, 255, 255, 255, 255, 0, 0}; //iff 0 its a latch 255 for monetary 
 byte cc_layer, cc_clutch;
 byte layer_sw, clutch_sw;
 byte bread[8], pbread[8];
@@ -258,7 +253,6 @@ void loop() {
       }
       if (ccc == 1) {
         usbMIDI.sendControlChange(enc_cc[layer_sw][i], midi_enc[layer_sw][i], channel);
-
       }
     }
 
@@ -280,24 +274,25 @@ void loop() {
 
   }
 
-  if (ct - pt[2] > 20) {
+  if (ct - pt[2] > 20) {  
     pt[2] = ct;
 
-    if (osc_latch[0] == 1) {
+    if (osc_latch[0] == 1) { //make this larger to go faster up
       osc[0] *= 1.03;
     }
-    if (osc_latch[0] == 0) {
+    if (osc_latch[0] == 0) { 
       osc[0] *= .98;
     }
 
-    if (osc[0] > 100) {
+    if (osc[0] > 100) {  /// 255 is max 
       osc_latch[0] = 0;
     }
     if (osc[0] < 10) {
       osc[0] = 10;
       osc_latch[0] = 1;
     }
-    analogWrite(30, osc[0]*sync_led);
+    analogWrite(30, osc[0]*sync_led); //with clock sync 
+    //analogWrite(30, osc[0]); //just breath
   }
 
 
@@ -315,7 +310,7 @@ void loop() {
       Serial.println();
     }
 
-    if (t == 176) {
+    if (t == 176) {   // cc recieved
       if (d1 == ccin[0]) {
         ccin_read[0] = d2;
       }
@@ -332,7 +327,7 @@ void loop() {
       sync_c = 0;
     }
 
-    if (t == 248) {
+    if (t == 248) {    //clock 
       // if (d1 == 76) {}
       sync_led = 1;
       sync_c++;
@@ -347,10 +342,10 @@ void loop() {
   }
 
 
-  if (ct - pt[4] > 40) {
+  if (ct - pt[4] > 40) {   //output to leds
     pt[4] = ct;
-    static byte sat = 230;
-    static byte bright = 80;
+    static byte sat = 230; 
+    static byte bright = 80; //out of 255
 
     for (byte h = 0; h < 2; h++) {
 
