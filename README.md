@@ -1,2 +1,2 @@
 # Mobely-Daughtership
-Custom keyboard for mobley
+Custom keyboard for Mobley
