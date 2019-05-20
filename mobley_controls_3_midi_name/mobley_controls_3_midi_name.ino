@@ -16,9 +16,9 @@ Encoder myenc2(2, 9);
 byte button_pins[8] = {34, 36, 14, 38, 35, 33, 37, 39};
 byte switch_pins[2] = {31, 32};
 byte led_pins[8] = {18, 16, 20, 21, 17, 19, 23, 22};
-byte button_cc[2][8] = {{12, 14, 16, 17, 18, 20, 22, 24}, {12, 15, 16, 17, 19, 21, 23, 25}};
+byte button_cc[2][8] = {{12, 14, 16, 17, 18, 20, 22, 24}, {12, 14, 16, 17, 19, 21, 23, 25}};
 byte enc_cc [2][8] = {{26, 28, 30, 32, 34, 36, 38, 40}, {27, 29, 31, 33, 35, 37, 39, 41}};
-byte button_cc_latch[8] = {255, 0, 255, 255, 255, 255, 0, 0}; //iff 0 its a latch 255 for monetary 
+byte button_cc_latch[8] = {255, 255, 255, 255, 255, 255, 255, 255}; //iff 0 its a latch 255 for momenetary 
 byte cc_layer, cc_clutch;
 byte layer_sw, clutch_sw;
 byte bread[8], pbread[8];
@@ -61,18 +61,17 @@ void setup() {
     pinMode(button_pins[f], INPUT_PULLUP);
     pinMode(led_pins[f], OUTPUT);
     digitalWrite(led_pins[f], 1);
-    delay(100);
+    delay(200);
     digitalWrite(led_pins[f], 0);
-    apaleds[0].setHSV(0, 0, f * 16);
-    apaleds[1].setHSV(0, 0, f * 16);
-    analogWrite(30, f * 16);
+    apaleds[0].setHSV(0, 0, f * 31);
+    apaleds[1].setHSV(0, 0, f * 31);
+    analogWrite(30, f * 31);
 
     FastLED.show();
   }
   apaleds[0].setHSV(0, 0, 16);
   apaleds[1].setHSV(0, 0, 16);
   FastLED.show();
-
 }
 
 uint32_t ct, pt[8];
@@ -136,6 +135,7 @@ void loop() {
       for (byte j = 0; j < 8; j++) {
         digitalWrite(led_pins[j], 1);
       }
+      
     }
 
     if (pswread[1] == 1 && swread[1] == 0) {
@@ -175,13 +175,13 @@ void loop() {
         enc_step=enc_step_high;
         if (pbread[j] == 0 && bread[j] == 1) {
           if (layer_sw == 0) {
-            usbMIDI.sendControlChange(button_cc[0][j], 1, channel);
+            usbMIDI.sendControlChange(button_cc[0][j], 127, channel);
             digitalWrite(led_pins[j], 0);
 
           }
           if (layer_sw == 1) {
             if (button_cc_latch[j] == 255) {
-              usbMIDI.sendControlChange(button_cc[1][j], 1, channel);
+              usbMIDI.sendControlChange(button_cc[1][j], 127, channel);
               digitalWrite(led_pins[j], 0);
             }
             if (button_cc_latch[j] != 255) {
@@ -284,7 +284,7 @@ void loop() {
       osc[0] *= .98;
     }
 
-    if (osc[0] > 100) {  /// 255 is max 
+    if (osc[0] > 255) {  /// 255 is max 
       osc_latch[0] = 0;
     }
     if (osc[0] < 10) {
@@ -344,13 +344,17 @@ void loop() {
 
   if (ct - pt[4] > 40) {   //output to leds
     pt[4] = ct;
-    static byte sat = 230; 
-    static byte bright = 80; //out of 255
+    static byte sat = 255; // out of 255 (originally set to 230)
+    static byte bright = 200; //out of 255 (originally set to 80)
 
     for (byte h = 0; h < 2; h++) {
-
+    //for (byte h = 1; h < 2; h++) {  
       if (ccin_read[h] == 0) {
-        apaleds[h].setHSV(0, 0, 0);
+        if(h==0){
+          apaleds[h].setHSV(0, sat, bright);
+        }else{
+          apaleds[h].setRGB(bright,bright,bright);
+        }
       }
       if (ccin_read[h] == 1) {//red
         apaleds[h].setHSV(0, sat, bright);
@@ -364,9 +368,20 @@ void loop() {
       if (ccin_read[h] == 4) {//white
         apaleds[h].setRGB(35 * (bright / 90.00), 50 * (bright / 90.00), 50 * (bright / 90.00));
       }
-      if (ccin_read[h] > 4) { //purple
-        apaleds[h].setHSV(190,  sat, bright);
+      if (ccin_read[h] == 5) {
+        apaleds[h].setHSV(0, 0, 0);
       }
+      if (ccin_read[h] > 5) {
+        apaleds[h].setRGB(bright,bright,0);//yellow
+        //apaleds[h].setHSV(190,  sat, bright);//purple
+      }
+
+      if (layer_sw==1) { //layer switch indicator
+        apaleds[1].setRGB(0,0,bright);
+      }
+
+
+      
     }
 
     FastLED.show();
